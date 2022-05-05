@@ -187,17 +187,17 @@ class BaseInterpolatedPowerlaw(PowerLawRedshift):
         self.nodes = nodes # store number of knots (nodes) which is changed within each subclass
 
     def psi_of_z(self, dataset, **kwargs):
-        m_splines = [kwargs.pop(f'm{i}') for i in range(self.nodes)]
+        z_splines = [kwargs.pop(f'z{i}') for i in range(self.nodes)]
         f_splines = [kwargs.pop(f'f{i}') for i in range(self.nodes)]
         
         # construct selector arrays if first call (THIS WOULD NEED CHANGED IF NOT USING FIXED KNOT LOCATIONS)
         if self.spline_selector is None:
-            self.spline_selector = (dataset['redshift'] >= m_splines[0]) & (dataset['redshift'] <= m_splines[-1])
+            self.spline_selector = (dataset['redshift'] >= z_splines[0]) & (dataset['redshift'] <= z_splines[-1])
         if self.norm_selector is None:
-            self.norm_selector = (self.zs >= m_splines[0]) & (self.zs <= m_splines[-1])
+            self.norm_selector = (self.zs >= z_splines[0]) & (self.zs <= z_splines[-1])
         
         # Create the spline interpolant from knot values
-        self.spline = interp1d(m_splines, f_splines, kind=self.kind)
+        self.spline = interp1d(z_splines, f_splines, kind=self.kind)
 
         # Construct powerlaw
         psi_of_z_values = self.__class__.primary_model(dataset["redshift"], **kwargs)
@@ -217,9 +217,9 @@ class InterpolatedPowerlaw10(BaseInterpolatedPowerlaw):
     def __init__(self, nodes=10, kind='cubic', zmax=1.9):
         return super(InterpolatedPowerlaw10, self).__init__(nodes=nodes, kind=kind, zmax=zmax)
     
-    def __call__(self, dataset, zmax, lamb, m0, m1, m2, m3, m4, m5, m6, m7, m8, m9,
+    def __call__(self, dataset, zmax, lamb, z0, z1, z2, z3, z4, z5, z6, z7, z8, z9,
                  f0, f1, f2, f3, f4, f5, f6, f7, f8, f9):
         return super(InterpolatedPowerlaw10, self).__call__(dataset=dataset, zmax=zmax,
-                                                          lamb=lamb, m0=m0, m1=m1, m2=m2, m3=m3, m4=m4, m5=m5,
-                                                          m6=m6, m7=m7, m8=m8, m9=m9, f0=f0, f1=f1, f2=f2, f3=f3, f4=f4,
+                                                          lamb=lamb, z0=z0, z1=z1, z2=z2, z3=z3, z4=z4, z5=z5,
+                                                          z6=z6, z7=z7, z8=z8, z9=z9, f0=f0, f1=f1, f2=f2, f3=f3, f4=f4,
                                                           f5=f5,f6=f6, f7=f7, f8=f8, f9=f9)
