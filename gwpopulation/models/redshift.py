@@ -217,7 +217,7 @@ class InterpolatedPowerlaw10(BaseInterpolatedPowerlaw):
     def __init__(self, nodes=10, kind='cubic', zmax=1.9):
         return super(InterpolatedPowerlaw10, self).__init__(nodes=nodes, kind=kind, zmax=zmax)
     
-    def __call__(self, dataset, zmax, lamb, z0, z1, z2, z3, z4, z5, z6, z7, z8, z9,
+    def __call__(self, dataset, lamb, z0, z1, z2, z3, z4, z5, z6, z7, z8, z9,
                  f0, f1, f2, f3, f4, f5, f6, f7, f8, f9):
         return super(InterpolatedPowerlaw10, self).__call__(dataset=dataset, zmax=zmax,
                                                           lamb=lamb, z0=z0, z1=z1, z2=z2, z3=z3, z4=z4, z5=z5,
