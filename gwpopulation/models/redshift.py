@@ -5,6 +5,7 @@ Implemented redshift models
 import numpy as np
 
 from ..cupy_utils import to_numpy, trapz, xp
+from scipy.interpolate import interp1d
 
 
 class _Redshift(object):
@@ -167,3 +168,58 @@ def total_four_volume(lamb, analysis_time, max_redshift=2.3):
         * normalization
     )
     return total_volume
+
+def psi_of_z_powerlaw(z, lamb=2.7):
+    return (1+z)**lamb
+    
+class BaseInterpolatedPowerlaw(PowerLawRedshift):
+    '''
+    Base class for the Interpolated Powerlaw classes (vary the number of nodes) 
+    '''
+    primary_model = psi_of_z_powerlaw
+
+    def __init__(self, nodes=10, kind='cubic', zmax=1.9):
+        super(BaseInterpolatedPowerlaw, self).__init__(zmax=zmax)
+        self.norm_selector = None # store selector array for normalizations since spline knots stay fixed
+        self.spline_selector = None # store spline selector array since knots stay fixed
+        self.spline = None # store the spline interpolant so that intpolation only happens once in p_m1 and NOT again in norm_pm1 
+        self.kind = kind # can change to different types of interpolation supported with scipy.interpolate.interp1d
+        self.nodes = nodes # store number of knots (nodes) which is changed within each subclass
+
+    def psi_of_z(self, dataset, **kwargs):
+        m_splines = [kwargs.pop(f'm{i}') for i in range(self.nodes)]
+        f_splines = [kwargs.pop(f'f{i}') for i in range(self.nodes)]
+        
+        # construct selector arrays if first call (THIS WOULD NEED CHANGED IF NOT USING FIXED KNOT LOCATIONS)
+        if self.spline_selector is None:
+            self.spline_selector = (dataset['redshift'] >= m_splines[0]) & (dataset['redshift'] <= m_splines[-1])
+        if self.norm_selector is None:
+            self.norm_selector = (self.zs >= m_splines[0]) & (self.zs <= m_splines[-1])
+        
+        # Create the spline interpolant from knot values
+        self.spline = interp1d(m_splines, f_splines, kind=self.kind)
+
+        # Construct powerlaw
+        psi_of_z_values = self.__class__.primary_model(dataset["redshift"], **kwargs)
+        
+        # Apply perturbation
+        perturbation = self.spline(dataset['redshift'][self.spline_selector])
+        psi_of_z_values[self.spline_selector] *= xp.exp(perturbation)
+        
+        return psi_of_z_values
+    
+
+class InterpolatedPowerlaw10(BaseInterpolatedPowerlaw):
+    '''
+    Subclass of the Base Interpolated Powerlaw to use 10 knots.  __call__ method needs args explictly written for bilby.hyper.model.Model() 
+    class to know which parameters go with each model
+    '''
+    def __init__(self, nodes=10, kind='cubic', zmax=1.9):
+        return super(InterpolatedPowerlaw10, self).__init__(nodes=nodes, kind=kind, zmax=zmax)
+    
+    def __call__(self, dataset, zmax, lamb, m0, m1, m2, m3, m4, m5, m6, m7, m8, m9,
+                 f0, f1, f2, f3, f4, f5, f6, f7, f8, f9):
+        return super(InterpolatedPowerlaw10, self).__call__(dataset=dataset, zmax=zmax,
+                                                          lamb=lamb, m0=m0, m1=m1, m2=m2, m3=m3, m4=m4, m5=m5,
+                                                          m6=m6, m7=m7, m8=m8, m9=m9, f0=f0, f1=f1, f2=f2, f3=f3, f4=f4,
+                                                          f5=f5,f6=f6, f7=f7, f8=f8, f9=f9)
