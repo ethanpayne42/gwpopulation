@@ -178,8 +178,8 @@ class BaseInterpolatedPowerlaw(PowerLawRedshift):
     '''
     primary_model = psi_of_z_powerlaw
 
-    def __init__(self, nodes=10, kind='cubic', zmax=1.9):
-        super(BaseInterpolatedPowerlaw, self).__init__(zmax=zmax)
+    def __init__(self, nodes=10, kind='cubic', z_max=1.9):
+        super(BaseInterpolatedPowerlaw, self).__init__(z_max=z_max)
         self.norm_selector = None # store selector array for normalizations since spline knots stay fixed
         self.spline_selector = None # store spline selector array since knots stay fixed
         self.spline = None # store the spline interpolant so that intpolation only happens once in p_m1 and NOT again in norm_pm1 
