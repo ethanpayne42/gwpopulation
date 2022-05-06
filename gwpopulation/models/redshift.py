@@ -169,10 +169,10 @@ def total_four_volume(lamb, analysis_time, max_redshift=2.3):
     )
     return total_volume
 
-def psi_of_z_powerlaw(z, lamb=2.7):
-    return (1+z)**lamb
+def psi_of_z_powerlaw(z, **kwargs):
+    return (1+z)**kwargs['lamb']
     
-class BaseInterpolatedPowerlaw(PowerLawRedshift):
+class BaseInterpolatedPowerlaw(_Redshift):
     '''
     Base class for the Interpolated Powerlaw classes (vary the number of nodes) 
     '''
@@ -186,13 +186,13 @@ class BaseInterpolatedPowerlaw(PowerLawRedshift):
         self.kind = kind # can change to different types of interpolation supported with scipy.interpolate.interp1d
         self.nodes = nodes # store number of knots (nodes) which is changed within each subclass
 
-    def psi_of_z(self, dataset, **kwargs):
+    def psi_of_z(self, redshift, **kwargs):
         z_splines = [kwargs.pop(f'z{i}') for i in range(self.nodes)]
         f_splines = [kwargs.pop(f'f{i}') for i in range(self.nodes)]
         
         # construct selector arrays if first call (THIS WOULD NEED CHANGED IF NOT USING FIXED KNOT LOCATIONS)
         if self.spline_selector is None:
-            self.spline_selector = (dataset['redshift'] >= z_splines[0]) & (dataset['redshift'] <= z_splines[-1])
+            self.spline_selector = (redshift >= z_splines[0]) & (redshift <= z_splines[-1])
         if self.norm_selector is None:
             self.norm_selector = (self.zs >= z_splines[0]) & (self.zs <= z_splines[-1])
         
@@ -200,13 +200,20 @@ class BaseInterpolatedPowerlaw(PowerLawRedshift):
         self.spline = interp1d(z_splines, f_splines, kind=self.kind)
 
         # Construct powerlaw
-        psi_of_z_values = self.__class__.primary_model(dataset["redshift"], **kwargs)
+        psi_of_z_values = self.__class__.primary_model(redshift, **kwargs)
         
         # Apply perturbation
-        perturbation = self.spline(dataset['redshift'][self.spline_selector])
+        perturbation = self.spline(redshift[self.spline_selector])
         psi_of_z_values[self.spline_selector] *= xp.exp(perturbation)
         
         return psi_of_z_values
+    
+    def __call__(self, dataset, lamb, z0, z1, z2, z3, z4, z5, z6, z7, z8, z9,
+                 f0, f1, f2, f3, f4, f5, f6, f7, f8, f9):
+        return self.probability(dataset=dataset,
+                  lamb=lamb, z0=z0, z1=z1, z2=z2, z3=z3, z4=z4, z5=z5,
+                  z6=z6, z7=z7, z8=z8, z9=z9, f0=f0, f1=f1, f2=f2, f3=f3, f4=f4,
+                  f5=f5,f6=f6, f7=f7, f8=f8, f9=f9)
     
 
 class InterpolatedPowerlaw10(BaseInterpolatedPowerlaw):
@@ -214,8 +221,8 @@ class InterpolatedPowerlaw10(BaseInterpolatedPowerlaw):
     Subclass of the Base Interpolated Powerlaw to use 10 knots.  __call__ method needs args explictly written for bilby.hyper.model.Model() 
     class to know which parameters go with each model
     '''
-    def __init__(self, nodes=10, kind='cubic', zmax=1.9):
-        return super(InterpolatedPowerlaw10, self).__init__(nodes=nodes, kind=kind, zmax=zmax)
+    def __init__(self, nodes=10, kind='cubic', z_max=1.9):
+        return super(InterpolatedPowerlaw10, self).__init__(nodes=nodes, kind=kind, z_max=z_max)
     
     def __call__(self, dataset, lamb, z0, z1, z2, z3, z4, z5, z6, z7, z8, z9,
                  f0, f1, f2, f3, f4, f5, f6, f7, f8, f9):
