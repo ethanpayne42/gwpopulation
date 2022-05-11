@@ -111,7 +111,33 @@ class PowerLawRedshift(_Redshift):
     def psi_of_z(self, redshift, **parameters):
         return (1 + redshift) ** parameters["lamb"]
 
+class BrokenPowerLawRedshift(_Redshift):
+    r"""
+    Broken power law
 
+    .. math::
+        p(z|\gamma, \kappa, z_p) &\propto \frac{1}{1 + z}\frac{dV_c}{dz} \psi(z|\lambda_1, \lambda_2, z_break)
+
+        \psi(z|\lambda_1, \lambda_2, z_break) &= (1 + z)^\lambda_1 for z < z_break
+                                              &= (1 + z_break)^(\lambda_1 - \lambda_2) * (1 + z)^\lambda_2 for z_break < z < z_max
+
+    Parameters
+    ----------
+    lamb1: float
+        The spectral index of the low redshift component.
+    lamb2: float
+        The spectral index of the high redshift component.
+    z_break: float
+        Break location of the redshift
+    """
+
+    def __call__(self, dataset, lamb1, lamb2, z_break):
+        return self.probability(dataset=dataset, lamb1=lamb1, lamb2=lamb2, z_break=z_break)
+
+    def psi_of_z(self, redshift, **parameters):
+        return (1 + redshift) ** parameters["lamb1"] * (redshift < parameters['z_break']) + (1 + parameters['z_break'])**(parameters["lamb1"] - parameters["lamb2"]) * (1 + redshift)**parameters['lamb2'] * (redshift > parameters['z_break'])
+
+        
 class MadauDickinsonRedshift(_Redshift):
     r"""
     Redshift model from Fishbach+ https://arxiv.org/abs/1805.10270 (33)
